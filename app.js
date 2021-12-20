@@ -7,10 +7,10 @@ let width = window.innerWidth
 const world = document.querySelector('.world')
 
 let scene, camera, renderer, control
-let structure, forest, roche
+let structure, nPic
 
 let color = {
-    white: 0xd8d0d1,
+    white:  0xffffff ,
     yellow: 0xF5FA99,
     blue: 0x85dde4,
     lightGrey: 0xc8c8c8,
@@ -25,10 +25,10 @@ function createScene() {
 
     //-------scene
     scene = new THREE.Scene()
-    scene.fog = new THREE.Fog(color.white, 300, 1000)
+    scene.fog = new THREE.Fog(color.lightGrey, 350, 1000)
     //-------camera
     camera = new THREE.PerspectiveCamera(60, width / height, 1, 10000)
-    camera.position.set(0, 250, 600)
+    camera.position.set(0, 250, 650)
     camera.lookAt(0, 0, 0)
     //-------renderer
     renderer = new THREE.WebGLRenderer({
@@ -45,16 +45,16 @@ function createScene() {
 
 }
 function createLight() {
-    const hemisphereLight = new THREE.HemisphereLight(color.white, color.yellow, .4)
+    const hemisphereLight = new THREE.HemisphereLight(color.white, color.yellow, 0.6)
 
-    const light = new THREE.DirectionalLight(color.white, 0.9)
-    light.position.set(-100, 30, -110)
+    const light = new THREE.DirectionalLight(color.white, 0.7)
+    light.position.set(-100, 30, 110)
     light.castShadow = true
 
-    light.shadow.camera.left = -100;
-    light.shadow.camera.right = 100;
-    light.shadow.camera.top = 100;
-    light.shadow.camera.bottom = -60;
+    light.shadow.camera.left = -200;
+    light.shadow.camera.right = 200;
+    light.shadow.camera.top = 200;
+    light.shadow.camera.bottom = -120;
     light.shadow.camera.near = 1;
     light.shadow.camera.far = 1000;
 
@@ -77,7 +77,6 @@ function initialization() {
 }
 function animation() {
     structure.mesh.rotation.y += 0.001
-
     renderer.render(scene, camera)
     control.update()
     requestAnimationFrame(animation)
@@ -91,18 +90,13 @@ class Structure {
     constructor() {
         this.mesh = new THREE.Object3D()
 
-        // const geometry = new THREE.CylinderGeometry(structureLargeur, 1, structureHauteur, 10, 1)
-        // const material = new THREE.MeshPhongMaterial({ color: color.lightGreen })
-        // const cylindre = new THREE.Mesh(geometry, material)
-        // cylindre.receiveShadow = true
-        // this.mesh.add(cylindre)
-
         let largeurSunite = 40
         let sLarge = structureLargeur
         const geoS = new THREE.BoxGeometry(largeurSunite, 10, largeurSunite)
         const matS = new THREE.MeshPhongMaterial({ color: color.lightGreen })
         const matS2 = new THREE.MeshPhongMaterial({ color: color.lightGrey })
         const matS3 = new THREE.MeshPhongMaterial({ color: color.blue, flatShading: true })
+        matS3.transparent = true
         matS3.opacity = 0.8
         let nbS = 50
         let angleS = 360 / nbS
@@ -155,6 +149,35 @@ class Structure {
         this.createRoche()
         this.createMaison()
         this.createMontagne()
+        this.createNuage()
+    }
+    createNuage(){
+        nPic = new THREE.Object3D()
+        nPic.scale.set(0.5,0.5,0.5)
+        nPic.position.x = 80
+        nPic.position.y = 70
+        nPic.position.z = -130
+    
+        let nbNuage = 3
+        let anglePic = 2*Math.PI/nbNuage
+        for(let i = 0; i< nbNuage; i++){
+            let nuage = new Nuage()
+            nuage.mesh.position.x = Math.sin(anglePic*i)*100
+            nuage.mesh.position.y = 150
+            nuage.mesh.position.z = Math.cos(anglePic*i)*100
+    
+            nuage.mesh.rotation.x = Math.PI*Math.random()
+            nuage.mesh.rotation.y = Math.PI*Math.random()
+            nuage.mesh.rotation.z = 0.1*Math.random()
+    
+            nPic.add(nuage.mesh)
+        }
+        this.mesh.add(nPic)
+        function loop(){
+            nPic.rotation.y += 0.01
+            requestAnimationFrame(loop)
+        }
+        loop()
     }
     createMontagne() {
         let montagne = new Montagne()
@@ -167,17 +190,28 @@ class Structure {
     createMaison() {
         let maison = new Maison()
         maison.mesh.scale.set(0.9, 0.9, 0.9)
+        maison.mesh.rotation.y = Math.PI/2
         maison.mesh.position.x = -structureLargeur / 4
         maison.mesh.position.z = structureLargeur / 3.5
         maison.mesh.position.y = 48
         this.mesh.add(maison.mesh)
     }
     createTree() {
-        forest = new Forest(40, 80)
+        let forest = new Forest(40, 80)
         forest.mesh.position.y = 50
         forest.mesh.position.x = 35
         forest.mesh.position.z = 0
+        let forest2 = new Forest(4, 30)
+        forest2.mesh.position.y = 50
+        forest2.mesh.position.x = -120
+        forest2.mesh.position.z = 40
+        let forest3 = new Forest(2, 15)
+        forest3.mesh.position.y = 50
+        forest3.mesh.position.x = -60
+        forest3.mesh.position.z = -135
         this.mesh.add(forest.mesh)
+        this.mesh.add(forest2.mesh)
+        this.mesh.add(forest3.mesh)
     }
     createRoche() {
         function setRoche(object, x, y, z) {
@@ -481,17 +515,18 @@ class Montagne {
     constructor() {
         this.mesh = new THREE.Object3D()
 
-
-        let colorVariable = [color.darkGreen, color.grey, color.white]
-
         const box = new THREE.BoxGeometry(20,20,20)
         const dode = new THREE.DodecahedronGeometry(20,0)
         const tetra = new THREE.TetrahedronGeometry(20,0)
+        const box1 = new THREE.BoxGeometry(15,15,15)
+        const dode1 = new THREE.DodecahedronGeometry(15,0)
+        const tetra1 = new THREE.TetrahedronGeometry(15,0)
         let arrGeo = [box, dode, tetra]
-        const mat1 = new THREE.MeshPhongMaterial({ color: color.lightGreen })
-        const mat2 = new THREE.MeshPhongMaterial({ color: color.brown })
-        const mat3 = new THREE.MeshPhongMaterial({ color: color.grey })
-        const mat4 = new THREE.MeshPhongMaterial({ color: color.white })
+        let arrGeo1 = [box1, dode1, tetra1]
+        const mat1 = new THREE.MeshPhongMaterial({ color: color.lightGreen, flatShading: true })
+        const mat2 = new THREE.MeshPhongMaterial({ color: color.brown, flatShading: true })
+        const mat3 = new THREE.MeshPhongMaterial({ color: color.grey, flatShading: true })
+        const mat4 = new THREE.MeshPhongMaterial({ color: color.white, flatShading: true })
 
 
         for (let i = 0; i < 50; i++) {
@@ -503,6 +538,47 @@ class Montagne {
             socle.rotation.x = Math.random()*6
             socle.rotation.z = Math.random()*6
             socle.rotation.y = Math.random()*6
+            socle.castShadow = true
+            socle.receiveShadow = true
+            this.mesh.add(socle)
+        }
+        for (let i = 0; i < 50; i++) {
+            let iV = Math.floor(Math.random() * 3)
+            const socle = new THREE.Mesh(arrGeo[iV], mat2)
+            socle.position.x = Math.random()*50
+            socle.position.z = Math.random()*50
+            socle.position.y = 20 + 20*Math.random()
+            socle.rotation.x = Math.random()*6
+            socle.rotation.z = Math.random()*6
+            socle.rotation.y = Math.random()*6
+            socle.castShadow = true
+            socle.receiveShadow = true
+            this.mesh.add(socle)
+        }
+        for (let i = 0; i < 40; i++) {
+            let iV = Math.floor(Math.random() * 3)
+            const socle = new THREE.Mesh(arrGeo1[iV], mat3)
+            socle.position.x = Math.random()*40
+            socle.position.z = Math.random()*40
+            socle.position.y = 40 + 20*Math.random()
+            socle.rotation.x = Math.random()*6
+            socle.rotation.z = Math.random()*6
+            socle.rotation.y = Math.random()*6
+            socle.castShadow = true
+            socle.receiveShadow = true
+            this.mesh.add(socle)
+        }
+        for (let i = 0; i < 20; i++) {
+            let iV = Math.floor(Math.random() * 3)
+            const socle = new THREE.Mesh(arrGeo1[2], mat4)
+            socle.position.x = Math.random()*18
+            socle.position.z = Math.random()*12
+            socle.position.y =  60 + 40*Math.random()
+            socle.rotation.x = Math.random()*6
+            socle.rotation.z = Math.random()*6
+            socle.rotation.y = Math.random()*6
+            socle.castShadow = true
+            socle.receiveShadow = true
             this.mesh.add(socle)
         }
         for (let i = 0; i < 50; i++) {
@@ -514,11 +590,37 @@ class Montagne {
             socle.rotation.x = Math.random()*6
             socle.rotation.z = Math.random()*6
             socle.rotation.y = Math.random()*6
+            socle.castShadow = true
+            socle.receiveShadow = true
             this.mesh.add(socle)
         }
 
     }
 }
+class Nuage {
+    constructor(){
+        this.mesh = new THREE.Object3D()
+        let positionX = 0
+        for(let i = 0; i<4; i++){
+            const geo = new THREE.DodecahedronGeometry(20,0)
+            const mat = new THREE.MeshPhongMaterial({color: color.white})
+            mat.transparent = true
+            mat.opacity = 0.6
+
+            const nuage = new THREE.Mesh(geo, mat)
+            nuage.position.x = positionX
+            nuage.position.y = Math.random()*5
+            nuage.position.z = Math.random()*5
+            nuage.rotation.x = Math.random()*5
+            nuage.rotation.y = Math.random()*5
+            nuage.rotation.z = Math.random()*5
+
+            this.mesh.add(nuage)
+            positionX += Math.random()*30
+        }
+    }
+}
+
 
 
 
