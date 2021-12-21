@@ -7,12 +7,14 @@ let width = window.innerWidth
 const world = document.querySelector('.world')
 
 let scene, camera, renderer, control
-let structure, nPic
+let structure, nPic, light, light2
 
 let color = {
     white:  0xffffff ,
     yellow: 0xF5FA99,
+    red: 0xCB1904,
     blue: 0x85dde4,
+    darkBlue: 0x4C73A8,
     lightGrey: 0xc8c8c8,
     grey: 0x9c9c9c,
     darkGrey: 0x5b5b5b,
@@ -25,7 +27,7 @@ function createScene() {
 
     //-------scene
     scene = new THREE.Scene()
-    scene.fog = new THREE.Fog(color.lightGrey, 350, 1000)
+    // scene.fog = new THREE.Fog(color.lightGrey, 350, 1000)
     //-------camera
     camera = new THREE.PerspectiveCamera(60, width / height, 1, 10000)
     camera.position.set(0, 250, 650)
@@ -45,10 +47,11 @@ function createScene() {
 
 }
 function createLight() {
-    const hemisphereLight = new THREE.HemisphereLight(color.white, color.yellow, 0.6)
+    const hemisphereLight = new THREE.HemisphereLight(color.white, color.yellow, 0.1)
 
-    const light = new THREE.DirectionalLight(color.white, 0.7)
-    light.position.set(-100, 30, 110)
+    light = new THREE.DirectionalLight(color.white, 1)
+    light.position.set(100, 100, -10)
+// y 0 intensité 0
     light.castShadow = true
 
     light.shadow.camera.left = -200;
@@ -62,9 +65,26 @@ function createLight() {
     light.shadow.mapSize.width = 1044;
     light.shadow.mapSize.height = 1044;
 
+    light2 = new THREE.PointLight('yellow', 1)
+    light2.position.set(0, 150, 0)
+
+    light2.castShadow = true
+
+    light2.shadow.camera.left = -200;
+    light2.shadow.camera.right = 200;
+    light2.shadow.camera.top = 200;
+    light2.shadow.camera.bottom = -120;
+    light2.shadow.camera.near = 1;
+    light2.shadow.camera.far = 1000;
+
+    // Shadow map size
+    light2.shadow.mapSize.width = 1044;
+    light2.shadow.mapSize.height = 1044;
+
     // scene.add(hemisphereLight)
     scene.add(light)
-    scene.add(hemisphereLight)
+    // scene.add(light2)
+
 
 
 }
@@ -76,7 +96,8 @@ function initialization() {
     animation()
 }
 function animation() {
-    structure.mesh.rotation.y += 0.001
+    // structure.mesh.rotation.y += 0.001
+    // changeLight()
     renderer.render(scene, camera)
     control.update()
     requestAnimationFrame(animation)
@@ -144,12 +165,21 @@ class Structure {
         }
         this.stone()
         this.littleStone()
-        this.ring()
+        // this.ring()
         this.createTree()
         this.createRoche()
         this.createMaison()
         this.createMontagne()
         this.createNuage()
+        this.mer()
+        this.phare()
+    }
+    phare(){
+        let phare = new Phare()
+        phare.mesh.position.y = 70
+        phare.mesh.position.x = 20
+        phare.mesh.position.z = 122
+        this.mesh.add(phare.mesh)
     }
     createNuage(){
         nPic = new THREE.Object3D()
@@ -174,7 +204,7 @@ class Structure {
         }
         this.mesh.add(nPic)
         function loop(){
-            nPic.rotation.y += 0.01
+            nPic.rotation.y += 0.005
             requestAnimationFrame(loop)
         }
         loop()
@@ -286,7 +316,7 @@ class Structure {
         let nbStone = 60
         let angle = 360 / nbStone
 
-        const material = new THREE.MeshPhongMaterial({ color: color.lightGrey })
+        const material = new THREE.MeshPhongMaterial({ color: color.grey })
         let positionY = structureHauteur / 4
         let positionXZ = structureLargeur * 2
 
@@ -308,6 +338,10 @@ class Structure {
             this.mesh.add(pierre)
         }
     }
+    mer(){
+        let mer = new Mer()
+        this.mesh.add(mer.mesh)
+    }
 }
 function createStructure() {
     structure = new Structure()
@@ -327,6 +361,7 @@ class Tree {
 
         const tronc = new THREE.Mesh(geoTronc, materialTronc)
         tronc.castShadow = true
+        tronc.receiveShadow = true
         this.mesh.add(tronc)
     }
     feuille() {
@@ -400,6 +435,8 @@ class Maison {
         this.sPrincipal()
         this.toit()
         this.cheminer()
+        this.fumer()
+        this.fenetre()
     }
     sPrincipal() {
         let positionY = 0
@@ -509,6 +546,57 @@ class Maison {
         cheminer.position.x = -10
         this.mesh.add(cheminer)
 
+    }
+    fumer(){
+        let nu = new Nuage()
+        nu.opacity = 0.1
+        nu.mesh.scale.set(0.1,0.2,0.1)
+        nu.mesh.position.y = 40
+        nu.mesh.position.z = -10
+        nu.mesh.position.x = -10
+        this.mesh.add(nu.mesh)
+    }
+    fenetre(){
+        let fe = new Fenetre()
+        fe.mesh.position.y = 12
+        fe.mesh.position.x = -15
+        fe.mesh.position.z = -25
+        fe.mesh.scale.set(0.4,0.4,0.4)
+        this.mesh.add(fe.mesh)
+
+        let fe2 = new Fenetre()
+        fe2.mesh.position.y = 10
+        fe2.mesh.position.x = -36
+        fe2.mesh.position.z = 0
+        fe2.mesh.rotation.y = 0.5*Math.PI
+        fe2.mesh.scale.set(0.4,0.4,0.4)
+        this.mesh.add(fe2.mesh)
+    }
+}
+class Fenetre{
+    constructor(){
+        this.mesh = new THREE.Object3D()
+
+        const geo = new THREE.BoxGeometry(20,2,2)
+        const mat = new THREE.MeshPhongMaterial({color: color.brown})
+        const arrPX = [0,10,0,-10]
+        const arrPY = [10,0,-10,0]
+        let roX = 0
+        for(let i = 0; i<4; i++){
+            let f = new THREE.Mesh(geo,mat)
+            f.rotation.z = roX
+            f.position.x = arrPX[i]
+            f.position.y = arrPY[i]
+            f.receiveShadow = true
+            this.mesh.add(f)
+            roX += 0.5*Math.PI
+        }
+        const geo2 = new THREE.BoxGeometry(18,18,1)
+        const mat2 = new THREE.MeshPhongMaterial({color: color.grey})
+
+        const glass = new THREE.Mesh(geo2, mat2)
+        glass.receiveShadow = true
+        this.mesh.add(glass)
     }
 }
 class Montagne {
@@ -620,8 +708,103 @@ class Nuage {
         }
     }
 }
+class Mer{
+    constructor(){
+        this.mesh = new THREE.Object3D()
+
+        const geo = new THREE.BoxGeometry(20,3,20)
+        const mat = new THREE.MeshPhongMaterial({color: color.darkBlue, flatShading: true})
+        mat.opacity = 0.4
+        mat.transparent = true
+        let nbVague = 120
+        let nbAngle = 400
+        let largeurOcean = 1000
+        for(let i = 0; i<nbVague; i++){
+            let angle = 2*Math.PI/nbAngle
+            for(let j = 0; j<nbAngle; j++){
+                let vague = new THREE.Mesh(geo, mat)
+                vague.position.x = Math.sin(angle*j)*largeurOcean + Math.random()*20
+                vague.position.z = Math.cos(angle*j)*largeurOcean + Math.random()*20
+                vague.position.y = 40
+
+                vague.rotation.x = Math.PI/10*Math.random() - Math.PI/10*Math.random()
+                vague.rotation.z = Math.PI/10*Math.random() - Math.PI/10*Math.random()
+                vague.rotation.y = Math.PI/10*Math.random() - Math.PI/10*Math.random()
+                vague.castShadow = true
+                vague.receiveShadow = true
+                this.mesh.add(vague)
+                
+            }
+            nbAngle -= nbAngle/70
+            largeurOcean -= largeurOcean/70
+        }
+    }
+}
+class Phare{
+    constructor(){
+        this.mesh = new THREE.Object3D()
+
+        const geo = new THREE.CylinderGeometry(20,22,25)
+        const geo2 = new THREE.CylinderGeometry(18,20,25)
+        const geo3 = new THREE.CylinderGeometry(16,18,25)
+        const geo4 = new THREE.CylinderGeometry(14,16,25)
+        const mat = new THREE.MeshPhongMaterial({color: color.white})
+        const mat2 = new THREE.MeshPhongMaterial({color: color.red})
+
+        const part1 = new THREE.Mesh(geo, mat)
+        part1.castShadow = true
+        part1.receiveShadow = true
+        part1.position.y = -12
+        const part2 = new THREE.Mesh(geo2, mat2)
+        part2.castShadow = true
+        part2.receiveShadow = true
+        part2.position.y = 13
+        const part3 = new THREE.Mesh(geo3, mat)
+        part3.castShadow = true
+        part3.receiveShadow = true
+        part3.position.y = 38
+        const part4 = new THREE.Mesh(geo4, mat2)
+        part4.castShadow = true
+        part4.receiveShadow = true
+        part4.position.y = 63
+
+        this.mesh.add(part1, part2, part3, part4)
+    }
+    phareTete(){
+        const geoT = new THREE.BoxGeometry(20,5,5)
+        const matT = new THREE.MeshPhongMaterial({color: color.white})
+
+        const poto = new THREE.Mesh(geoT, matT)
+        poto.position.y = 100
+    }
+}
+
+let vy = 1
+let lI = 0.008
+function changeLight(){
+    let posX = light.position.x
+    let posY = light.position.y
+    let posZ = light.position.z
 
 
+
+    if(posY > 100){
+        vy = -1
+        lI = -0.006
+    }else if(posY < -300){
+        vy = 1
+        lI = 0.008
+        light.intensity = 0.1
+        light.position.y = 0
+        light.position.x = 100
+        light.position.z = -10
+    }
+
+    light.intensity += lI
+    light.position.x -= 1
+    light.position.y += vy
+    light.position.z += 0.5
+}
 
 
 
