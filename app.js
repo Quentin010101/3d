@@ -1,5 +1,5 @@
-import * as THREE from '../three.js/build/three.module.js'
-import { OrbitControls } from '../three.js/examples/jsm/controls/OrbitControls.js'
+import * as THREE from '../three.module.js'
+// import { OrbitControls } from '../three.js/examples/jsm/controls/OrbitControls.js'
 
 
 let height = window.innerHeight
@@ -8,6 +8,13 @@ const world = document.querySelector('.world')
 
 let scene, camera, renderer, control
 let structure, nPic, light, light2
+
+let pYV = 1
+let pZV = 1
+let pXV = -1
+let lI = 0.01
+let lastPy = 0
+let hLight
 
 let color = {
     white:  0xffffff ,
@@ -27,7 +34,7 @@ function createScene() {
 
     //-------scene
     scene = new THREE.Scene()
-    // scene.fog = new THREE.Fog(color.lightGrey, 350, 1000)
+    // scene.fog = new THREE.Fog(color.white, 300, 1500)
     //-------camera
     camera = new THREE.PerspectiveCamera(60, width / height, 1, 10000)
     camera.position.set(0, 250, 650)
@@ -40,17 +47,17 @@ function createScene() {
     renderer.setSize(width, height)
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = 2
-    control = new OrbitControls(camera, renderer.domElement)
+    // control = new OrbitControls(camera, renderer.domElement)
 
 
     world.appendChild(renderer.domElement)
 
 }
 function createLight() {
-    const hemisphereLight = new THREE.HemisphereLight(color.white, color.yellow, 0.1)
+    hLight = new THREE.HemisphereLight(color.white, color.blue, 0.1)
 
-    light = new THREE.DirectionalLight(color.white, 1)
-    light.position.set(100, 100, -10)
+    light = new THREE.DirectionalLight(color.white, 0)
+    light.position.set(100, 0, -100)
 // y 0 intensité 0
     light.castShadow = true
 
@@ -65,25 +72,10 @@ function createLight() {
     light.shadow.mapSize.width = 1044;
     light.shadow.mapSize.height = 1044;
 
-    light2 = new THREE.PointLight('yellow', 1)
-    light2.position.set(0, 150, 0)
-
-    light2.castShadow = true
-
-    light2.shadow.camera.left = -200;
-    light2.shadow.camera.right = 200;
-    light2.shadow.camera.top = 200;
-    light2.shadow.camera.bottom = -120;
-    light2.shadow.camera.near = 1;
-    light2.shadow.camera.far = 1000;
-
-    // Shadow map size
-    light2.shadow.mapSize.width = 1044;
-    light2.shadow.mapSize.height = 1044;
 
     // scene.add(hemisphereLight)
     scene.add(light)
-    // scene.add(light2)
+    scene.add(hLight)
 
 
 
@@ -96,10 +88,10 @@ function initialization() {
     animation()
 }
 function animation() {
-    // structure.mesh.rotation.y += 0.001
-    // changeLight()
+    structure.mesh.rotation.y += 0.001
+    changeLight()
     renderer.render(scene, camera)
-    control.update()
+    // control.update()
     requestAnimationFrame(animation)
 }
 
@@ -176,7 +168,8 @@ class Structure {
     }
     phare(){
         let phare = new Phare()
-        phare.mesh.position.y = 70
+        phare.mesh.scale.set(0.8,0.8,0.8)
+        phare.mesh.position.y = 65
         phare.mesh.position.x = 20
         phare.mesh.position.z = 122
         this.mesh.add(phare.mesh)
@@ -424,6 +417,7 @@ class Roche {
             roche.position.z = positionZ
 
             roche.castShadow = true
+            roche.receiveShadow = true
             this.mesh.add(roche)
 
         }
@@ -544,6 +538,8 @@ class Maison {
         cheminer.position.y = 35
         cheminer.position.z = -10
         cheminer.position.x = -10
+        cheminer.castShadow = true
+        cheminer.receiveShadow = true
         this.mesh.add(cheminer)
 
     }
@@ -703,6 +699,8 @@ class Nuage {
             nuage.rotation.y = Math.random()*5
             nuage.rotation.z = Math.random()*5
 
+            nuage.castShadow = true
+            nuage.receiveShadow = true
             this.mesh.add(nuage)
             positionX += Math.random()*30
         }
@@ -712,13 +710,13 @@ class Mer{
     constructor(){
         this.mesh = new THREE.Object3D()
 
-        const geo = new THREE.BoxGeometry(20,3,20)
+        const geo = new THREE.BoxGeometry(40,3,40)
         const mat = new THREE.MeshPhongMaterial({color: color.darkBlue, flatShading: true})
         mat.opacity = 0.4
         mat.transparent = true
-        let nbVague = 120
-        let nbAngle = 400
-        let largeurOcean = 1000
+        let nbVague = 80
+        let nbAngle = 100
+        let largeurOcean = 600
         for(let i = 0; i<nbVague; i++){
             let angle = 2*Math.PI/nbAngle
             for(let j = 0; j<nbAngle; j++){
@@ -769,41 +767,124 @@ class Phare{
         part4.position.y = 63
 
         this.mesh.add(part1, part2, part3, part4)
+
+        light2 = new THREE.PointLight('yellow', 1)
+        light2.position.set(0, 90, 0)
+    
+        light2.castShadow = true
+    
+        light2.shadow.camera.left = -200;
+        light2.shadow.camera.right = 200;
+        light2.shadow.camera.top = 200;
+        light2.shadow.camera.bottom = -120;
+        light2.shadow.camera.near = 1;
+        light2.shadow.camera.far = 1000;
+    
+        light2.shadow.mapSize.width = 144;
+        light2.shadow.mapSize.height = 144;
+        this.mesh.add(light2)
+    
+        this.pharePivot()
+        this.phareTete()
     }
     phareTete(){
-        const geoT = new THREE.BoxGeometry(20,5,5)
+        const geoT = new THREE.BoxGeometry(4,18,4)
         const matT = new THREE.MeshPhongMaterial({color: color.white})
 
-        const poto = new THREE.Mesh(geoT, matT)
-        poto.position.y = 100
+        let arrXphare = [8,8,-8,-8]
+        let arrZphare = [-8,8,8,-8]
+        for(let i = 0; i<4; i++){
+
+            const poto = new THREE.Mesh(geoT, matT)
+            poto.position.y = 85
+            poto.position.x = arrXphare[i]
+            poto.position.z = arrZphare[i]
+            poto.castShadow = false
+            poto.receiveShadow = true
+            this.mesh.add(poto)
+        }
+        let geoT2 = new THREE.CylinderGeometry(5,15,10)
+        let matT2 = new THREE.MeshPhongMaterial({color: color.white})
+
+        let tete = new THREE.Mesh(geoT2,matT2)
+        tete.position.y = 98
+        tete.castShadow = true
+        tete.receiveShadow = true
+        this.mesh.add(tete)
+
+    }
+    pharePivot(){
+        const geo = new THREE.BoxGeometry(18,16,1)
+        const mat = new THREE.MeshPhongMaterial({color: color.white})
+
+        const pivotGroup = new THREE.Group()
+
+        let angle = 2*Math.PI
+        let arrPivotX = [-8,-4,0,4,8]
+        let arrPivotZ = [0,-4,-8,-4,0]
+        let arrPivotRot = [angle/4,angle/8,0,-angle/8,-angle/4]
+
+        for(let i = 0; i<5; i++){
+            const pivot = new THREE.Mesh(geo,mat)
+            pivot.position.y = 84
+            pivot.position.z = arrPivotZ[i]
+            pivot.position.x = arrPivotX[i]
+            
+            pivot.rotation.y = arrPivotRot[i]
+
+            pivot.castShadow = true
+            pivotGroup.add(pivot)
+
+        }
+        function looping(){
+            pivotGroup.rotation.y +=0.05
+            requestAnimationFrame(looping)
+        }
+        looping()
+        this.mesh.add(pivotGroup)
     }
 }
 
-let vy = 1
-let lI = 0.008
+
+
 function changeLight(){
-    let posX = light.position.x
-    let posY = light.position.y
-    let posZ = light.position.z
+    let pY = light.position.y
+    let pX = light.position.x
 
-
-
-    if(posY > 100){
-        vy = -1
-        lI = -0.006
-    }else if(posY < -300){
-        vy = 1
-        lI = 0.008
-        light.intensity = 0.1
-        light.position.y = 0
-        light.position.x = 100
-        light.position.z = -10
+    if(pY < 0){
+        light.intensity = 0
+        light2.intensity = 1
+    }else{
+        light2.intensity = 0.1
+        if(pY > lastPy){
+            light.intensity += lI
+        }else{
+            light.intensity -= lI
+           
+        }
     }
 
-    light.intensity += lI
-    light.position.x -= 1
-    light.position.y += vy
-    light.position.z += 0.5
+
+
+    if(pY > 100){
+        pYV = -1
+    }else if(pY < -100){
+        pYV = 1
+    }
+    console.log(pX)
+    if(pX < -100){
+        pXV = 1
+        pZV = 1
+    }else if(pX> 100){
+        pXV = -1
+        pZV = -1
+    }
+
+    lastPy = light.position.y
+    
+    light.position.x += pXV
+    light.position.z += pZV
+    light.position.y += pYV
 }
 
 
