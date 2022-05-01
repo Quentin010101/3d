@@ -157,13 +157,12 @@ class Structure {
         }
         this.stone()
         this.littleStone()
-        // this.ring()
+        this.ring()
         this.createTree()
         this.createRoche()
         this.createMaison()
         this.createMontagne()
         this.createNuage()
-        this.mer()
         this.phare()
     }
     phare(){
@@ -331,10 +330,7 @@ class Structure {
             this.mesh.add(pierre)
         }
     }
-    mer(){
-        let mer = new Mer()
-        this.mesh.add(mer.mesh)
-    }
+
 }
 function createStructure() {
     structure = new Structure()
